@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aurum — You're Offline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0b09;
+      --surface: #161410;
+      --border: #2a2620;
+      --accent: #c8a96e;
+      --text: #e8e0d0;
+      --muted: #7a7060;
+      --white: #f5f0e8;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    .bg-layer {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 50%, #1e1608 0%, transparent 70%),
+        radial-gradient(ellipse 30% 30% at 20% 80%, #1a1208 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 20%, #120e06 0%, transparent 55%);
+      animation: breathe 8s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+      from { opacity: 0.8; }
+      to   { opacity: 1; }
+    }
+
+    /* Grain overlay */
+    .grain {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Decorative corner lines */
+    .corner {
+      position: fixed; width: 60px; height: 60px; z-index: 2;
+      pointer-events: none;
+    }
+    .corner::before, .corner::after {
+      content: ''; position: absolute; background: var(--accent); opacity: 0.4;
+    }
+    .corner::before { height: 1px; width: 100%; top: 0; left: 0; }
+    .corner::after  { width: 1px; height: 100%; top: 0; left: 0; }
+    .corner.tl { top: 2rem; left: 2rem; }
+    .corner.tr { top: 2rem; right: 2rem; transform: scaleX(-1); }
+    .corner.bl { bottom: 2rem; left: 2rem; transform: scaleY(-1); }
+    .corner.br { bottom: 2rem; right: 2rem; transform: scale(-1); }
+
+    /* Main layout */
+    .page {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 3rem 2rem; text-align: center;
+    }
+
+    /* Signal icon — animated SVG rings */
+    .signal-wrap {
+      position: relative; width: 90px; height: 90px;
+      margin: 0 auto 3rem;
+    }
+    .ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid var(--accent);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      animation: pulse-ring 3s ease-out infinite;
+    }
+    .ring:nth-child(1) { width: 90px; height: 90px; animation-delay: 0s; }
+    .ring:nth-child(2) { width: 60px; height: 60px; animation-delay: 0.6s; }
+    .ring:nth-child(3) { width: 30px; height: 30px; animation-delay: 1.2s; }
+
+    @keyframes pulse-ring {
+      0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+      40%  { opacity: 0.5; }
+      100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0; }
+    }
+
+    .signal-dot {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 14px var(--accent);
+      animation: dot-glow 3s ease-in-out infinite alternate;
+    }
+    @keyframes dot-glow {
+      from { box-shadow: 0 0 8px var(--accent); opacity: 0.7; }
+      to   { box-shadow: 0 0 22px var(--accent); opacity: 1; }
+    }
+
+    /* Typography */
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 1.2rem;
+      opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      font-weight: 300; font-style: italic;
+      color: var(--white); line-height: 1.1;
+      margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeUp 0.8s 0.4s forwards;
+    }
+    h1 em {
+      font-style: normal; color: var(--accent);
+    }
+
+    .desc {
+      font-size: 1.05rem; font-weight: 300;
+      color: var(--muted); line-height: 1.75;
+      max-width: 400px; margin: 0 auto 3rem;
+      opacity: 0; animation: fadeUp 0.8s 0.6s forwards;
+    }
+
+    /* Divider */
+    .divider {
+      width: 48px; height: 1px; background: var(--border);
+      margin: 0 auto 3rem;
+      opacity: 0; animation: fadeUp 0.8s 0.7s forwards;
+    }
+
+    /* Retry button */
+    .retry-btn {
+      display: inline-block;
+      padding: 0.85rem 2.4rem;
+      border: 1px solid var(--accent);
+      color: var(--accent); background: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.16em;
+      text-transform: uppercase; cursor: pointer;
+      transition: all 0.25s;
+      opacity: 0; animation: fadeUp 0.8s 0.8s forwards;
+    }
+    .retry-btn:hover {
+      background: var(--accent); color: var(--bg);
+    }
+    .retry-btn:active { transform: scale(0.97); }
+
+    /* Status bar */
+    .status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.7rem 2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+      z-index: 20;
+      opacity: 0; animation: fadeUp 0.8s 1s forwards;
+    }
+    .status-dot {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; background: #c05050;
+      margin-right: 0.5rem;
+      animation: blink 2s step-end infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    /* Logo */
+    .logo {
+      position: fixed; top: 2rem; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem; font-weight: 600; font-style: italic;
+      letter-spacing: 0.18em; color: var(--accent);
+      text-transform: uppercase; z-index: 20;
+      opacity: 0; animation: fadeUp 0.8s 0s forwards;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .corner { width: 36px; height: 36px; }
+      .corner.tl, .corner.tr { top: 1.2rem; }
+      .corner.bl, .corner.br { bottom: 1.2rem; }
+      .corner.tl, .corner.bl { left: 1.2rem; }
+      .corner.tr, .corner.br { right: 1.2rem; }
+      .status-bar { padding: 0.7rem 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-layer"></div>
+  <div class="grain"></div>
+
+  <!-- Corner decorations -->
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- Logo -->
+  <div class="logo">Aurum</div>
+
+  <!-- Main content -->
+  <main class="page">
+    <!-- Animated signal rings -->
+    <div class="signal-wrap">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="signal-dot"></div>
+    </div>
+
+    <p class="eyebrow">No Connection</p>
+    <h1>You are<br /><em>offline</em></h1>
+
+    <div class="divider"></div>
+
+    <p class="desc">
+      It seems you've lost your connection. Please check your network and try again — we'll be here when you return.
+    </p>
+
+    <button class="retry-btn" onclick="window.location.reload()">
+      ↺ &nbsp; Try Again
+    </button>
+  </main>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span><span class="status-dot"></span>Offline</span>
+    <span>Aurum Studio · 2026</span>
+  </div>
+
+</body>
+</html>
